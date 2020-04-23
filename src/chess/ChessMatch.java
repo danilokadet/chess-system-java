@@ -1,9 +1,6 @@
 package chess;
 
-import com.sun.javafx.scene.traversal.TopMostTraversalEngine;
-
 import boradgame.Board;
-import boradgame.Position;
 import chess.pieces.King;
 import chess.pieces.Rook;
 
