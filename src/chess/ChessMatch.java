@@ -1,5 +1,6 @@
 package chess;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -7,8 +8,11 @@ import java.util.stream.Collectors;
 import boradgame.Board;
 import boradgame.Piece;
 import boradgame.Position;
+import chess.pieces.Bishop;
 import chess.pieces.King;
+import chess.pieces.Knight;
 import chess.pieces.Pawn;
+import chess.pieces.Queen;
 import chess.pieces.Rook;
 
 public class ChessMatch {
@@ -19,6 +23,7 @@ public class ChessMatch {
 	private boolean check;
 	private boolean checkMate;
 	private ChessPiece enPassantVulnerable;
+	private ChessPiece promoted;
 
 	private List<Piece> piecesOnTheBoard = new ArrayList<>();
 	private List<Piece> capturePieces = new ArrayList<>();
@@ -49,6 +54,11 @@ public class ChessMatch {
 
 	public boolean getCheck() {
 		return this.check;
+	}
+
+	public ChessPiece getPromoted() {
+
+		return this.promoted;
 	}
 
 	public ChessPiece getEnPassantVulnerable() {
@@ -96,6 +106,17 @@ public class ChessMatch {
 
 		ChessPiece movedPiece = (ChessPiece) board.piece(target);
 
+		// #specialmove promotion
+		promoted = null;
+		if (movedPiece instanceof Pawn) {
+
+			if ((movedPiece.getColor() == Color.WHITE && target.getRow() == 0)
+					|| movedPiece.getColor() == Color.BLACK && target.getRow() == 7) {
+
+				promoted = (ChessPiece) board.piece(target);
+				promoted = replacePromotedPiece("Q");
+			}
+		}
 		check = (testCheck(opponent(currentPlayer))) ? true : false;
 
 		if (testeCheckMate(opponent(currentPlayer))) {
@@ -117,6 +138,39 @@ public class ChessMatch {
 		}
 		return (ChessPiece) capturedPiece;
 
+	}
+
+	public ChessPiece replacePromotedPiece(String type) {
+
+		if (promoted == null) {
+
+			throw new IllegalStateException("There is no piece to be promoted");
+		}
+
+		if (!type.equals("B") && !type.equals("N") && !type.equals("R") && !type.equals("Q")) {
+
+			throw new InvalidParameterException("Invalid type for promotion");
+		}
+
+		Position pos = promoted.getChessPosition().toPosition();
+		Piece p = board.removePiece(pos);
+		piecesOnTheBoard.remove(p);
+		ChessPiece newpPiece = newPiece(type, promoted.getColor());
+		board.placePiece(newpPiece, pos);
+		piecesOnTheBoard.add(newpPiece);
+		
+		return newpPiece;
+	}
+
+	private ChessPiece newPiece(String type, Color color) {
+
+		if (type.equals("B"))
+			return new Bishop(board, color);
+		if (type.equals("N"))
+			return new Knight(board, color);
+		if (type.equals("Q"))
+			return new Queen(board, color);
+		return new Bishop(board, color);
 	}
 
 	private void validateTargetPosition(Position source, Position target) {
@@ -159,28 +213,27 @@ public class ChessMatch {
 			board.placePiece(rook, targetT);
 			rook.increaseMoveCount();
 		}
-		
-		//#specialmove en passant
+
+		// #specialmove en passant
 		if (p instanceof Pawn) {
-			
+
 			if (source.getColumn() != target.getColumn() && capturePiece == null) {
-				
+
 				Position pawPostion;
-				
+
 				if (p.getColor() == Color.WHITE) {
-					
+
 					pawPostion = new Position(target.getRow() + 1, target.getColumn());
-				}
-				else {
-					
+				} else {
+
 					pawPostion = new Position(target.getRow() - 1, target.getColumn());
-					
+
 				}
-				
+
 				capturePiece = board.removePiece(pawPostion);
 				capturePieces.add(capturePiece);
 				piecesOnTheBoard.remove(capturePiece);
-				
+
 			}
 		}
 
@@ -220,32 +273,30 @@ public class ChessMatch {
 			board.placePiece(rook, sourceT);
 			rook.decreaseMoveCount();
 		}
-		
-		
-		//#specialmove en passant
+
+		// #specialmove en passant
 		if (p instanceof Pawn) {
-			
+
 			if (source.getColumn() != target.getColumn() && capturedPiece == enPassantVulnerable) {
-				
-				ChessPiece paw = (ChessPiece)board.removePiece(target);
-				
+
+				ChessPiece paw = (ChessPiece) board.removePiece(target);
+
 				Position pawPostion;
-				
+
 				if (p.getColor() == Color.WHITE) {
-					
+
 					pawPostion = new Position(3, target.getColumn());
-				}
-				else {
-					
+				} else {
+
 					pawPostion = new Position(4, target.getColumn());
-					
+
 				}
-				
+
 				board.placePiece(paw, pawPostion);
 				capturedPiece = board.removePiece(pawPostion);
 				capturePieces.add(capturedPiece);
 				piecesOnTheBoard.remove(capturedPiece);
-				
+
 			}
 		}
 
