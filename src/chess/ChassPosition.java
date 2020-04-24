@@ -33,7 +33,7 @@ public class ChassPosition {
 	
 	protected static ChassPosition fromPosition(Position position) {
 		
-		return new ChassPosition((char)('a' - position.getColumn()), 8 - position.getRow());
+		return new ChassPosition((char)('a' + position.getColumn()), 8 - position.getRow());
 	}
 	
 	@Override
